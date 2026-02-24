@@ -22,6 +22,5 @@ class User(Base):
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    # Зв'язки (рядок вказує SQLAlchemy, де шукати модель)
     achievements: Mapped[list["UserAchievement"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     lessons_progress: Mapped[list["UserLesson"]] = relationship(back_populates="user", cascade="all, delete-orphan")

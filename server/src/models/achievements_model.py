@@ -13,6 +13,7 @@ class Achievement(Base):
 
     achievement_id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
     icon_path: Mapped[str | None] = mapped_column(String, nullable=True)
 
     users: Mapped[list["UserAchievement"]] = relationship(back_populates="achievement")
