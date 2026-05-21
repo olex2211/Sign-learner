@@ -53,6 +53,7 @@ services:
       - ./ml:/app
       - ./DataSet:/DataSet
       - ./DataSet_augmented:/DataSet_augmented
+      - ./Zenodo_Dataset:/Zenodo_Dataset
     entrypoint: ["python"]
     command: ["--version"]
 

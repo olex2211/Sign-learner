@@ -243,6 +243,95 @@ def plot_training_history(history: dict, output_path: str) -> None:
     print(f"Training history saved to: {output_path}")
 
 
+def feature_columns(df: pd.DataFrame) -> list[str]:
+    """Return landmark feature columns, ignoring optional split/video metadata."""
+    return [col for col in df.columns if col.startswith(("x", "y", "z"))]
+
+
+def load_label_map(path: str) -> dict[str, int]:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_single_csv_data(args, label_map: dict[str, int]):
+    df = pd.read_csv(args.data)
+    print(f"Loaded {len(df)} samples")
+
+    labels_str = df["label"].values
+
+    # Filter out classes with too few samples for stratified split
+    class_counts_raw = dict(zip(*np.unique(labels_str, return_counts=True)))
+    dropped_classes = [c for c, n in class_counts_raw.items() if n < args.min_samples]
+    if dropped_classes:
+        print(f"\nWARNING: Dropping {len(dropped_classes)} classes with < {args.min_samples} samples: {dropped_classes}")
+        mask = ~np.isin(labels_str, dropped_classes)
+        df = df[mask].reset_index(drop=True)
+        labels_str = df["label"].values
+        remaining = sorted(set(labels_str))
+        label_map = {name: idx for idx, name in enumerate(remaining)}
+        print(f"Remaining classes ({len(label_map)}): {list(label_map.keys())}")
+
+    columns = feature_columns(df)
+    label_indices = np.array([label_map[l] for l in labels_str])
+    features = df[columns].values.astype(np.float32)
+
+    print(f"Feature shape: {features.shape}")
+    print(f"Class distribution: {dict(zip(*np.unique(labels_str, return_counts=True)))}")
+
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        features, label_indices, test_size=0.3, random_state=args.seed, stratify=label_indices
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=args.seed, stratify=y_temp
+    )
+
+    print(f"\nSplit sizes: train={len(X_train)}, val={len(X_val)}, test={len(X_test)}")
+    return X_train, y_train, X_val, y_val, X_test, y_test, label_map
+
+
+def load_presplit_data(args, label_map: dict[str, int]):
+    split_frames = {
+        "train": pd.read_csv(args.train_data),
+        "val": pd.read_csv(args.val_data),
+        "test": pd.read_csv(args.test_data),
+    }
+    print(
+        "Loaded split samples: "
+        + ", ".join(f"{name}={len(df)}" for name, df in split_frames.items())
+    )
+
+    train_labels = split_frames["train"]["label"].values
+    train_counts = dict(zip(*np.unique(train_labels, return_counts=True)))
+    dropped_classes = [c for c, n in train_counts.items() if n < args.min_samples]
+    missing_from_train = [label for label in label_map if label not in train_counts]
+    dropped_classes.extend(missing_from_train)
+
+    if dropped_classes:
+        dropped_classes = sorted(set(dropped_classes))
+        print(f"\nWARNING: Dropping {len(dropped_classes)} classes unavailable/low in train: {dropped_classes}")
+
+    remaining = [label for label in label_map if label not in dropped_classes]
+    label_map = {name: idx for idx, name in enumerate(remaining)}
+    print(f"Remaining classes ({len(label_map)}): {remaining}")
+
+    arrays = {}
+    for split, df in split_frames.items():
+        df = df[df["label"].isin(label_map)].reset_index(drop=True)
+        labels = df["label"].values
+        columns = feature_columns(df)
+        arrays[split] = (
+            df[columns].values.astype(np.float32),
+            np.array([label_map[l] for l in labels]),
+        )
+        print(f"{split} class distribution: {dict(zip(*np.unique(labels, return_counts=True)))}")
+
+    X_train, y_train = arrays["train"]
+    X_val, y_val = arrays["val"]
+    X_test, y_test = arrays["test"]
+    print(f"\nSplit sizes: train={len(X_train)}, val={len(X_val)}, test={len(X_test)}")
+    return X_train, y_train, X_val, y_val, X_test, y_test, label_map
+
+
 # ──────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────
@@ -250,6 +339,9 @@ def plot_training_history(history: dict, output_path: str) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Train gesture classifier MLP")
     parser.add_argument("--data", type=str, default="data/landmarks.csv", help="Path to landmarks CSV")
+    parser.add_argument("--train-data", type=str, default=None, help="Path to pre-split train landmarks CSV")
+    parser.add_argument("--val-data", type=str, default=None, help="Path to pre-split validation landmarks CSV")
+    parser.add_argument("--test-data", type=str, default=None, help="Path to pre-split test landmarks CSV")
     parser.add_argument("--label-map", type=str, default="data/label_map.json", help="Path to label map JSON")
     parser.add_argument("--output", type=str, default="models/", help="Output directory for model artifacts")
     parser.add_argument("--epochs", type=int, default=100, help="Max training epochs")
@@ -268,50 +360,24 @@ def main():
     print(f"Using device: {device}")
 
     # ── Load data ──
-    df = pd.read_csv(args.data)
-    print(f"Loaded {len(df)} samples")
-
-    with open(args.label_map, "r", encoding="utf-8") as f:
-        label_map = json.load(f)
+    label_map = load_label_map(args.label_map)
     idx_to_label = {v: k for k, v in label_map.items()}
     num_classes = len(label_map)
     class_names = [idx_to_label[i] for i in range(num_classes)]
     print(f"Classes: {class_names}")
 
-    # Separate features and labels
-    labels_str = df["label"].values
+    has_presplit_data = bool(args.train_data or args.val_data or args.test_data)
+    if has_presplit_data and not (args.train_data and args.val_data and args.test_data):
+        parser.error("--train-data, --val-data, and --test-data must be provided together")
 
-    # Filter out classes with too few samples for stratified split
-    class_counts_raw = dict(zip(*np.unique(labels_str, return_counts=True)))
-    dropped_classes = [c for c, n in class_counts_raw.items() if n < args.min_samples]
-    if dropped_classes:
-        print(f"\nWARNING: Dropping {len(dropped_classes)} classes with < {args.min_samples} samples: {dropped_classes}")
-        mask = ~np.isin(labels_str, dropped_classes)
-        df = df[mask].reset_index(drop=True)
-        labels_str = df["label"].values
-        # Rebuild label map without dropped classes
-        remaining = sorted(set(labels_str))
-        label_map = {name: idx for idx, name in enumerate(remaining)}
-        idx_to_label = {v: k for k, v in label_map.items()}
-        num_classes = len(label_map)
-        class_names = [idx_to_label[i] for i in range(num_classes)]
-        print(f"Remaining classes ({num_classes}): {class_names}")
+    if has_presplit_data:
+        X_train, y_train, X_val, y_val, X_test, y_test, label_map = load_presplit_data(args, label_map)
+    else:
+        X_train, y_train, X_val, y_val, X_test, y_test, label_map = load_single_csv_data(args, label_map)
 
-    label_indices = np.array([label_map[l] for l in labels_str])
-    features = df.drop(columns=["label"]).values.astype(np.float32)
-
-    print(f"Feature shape: {features.shape}")
-    print(f"Class distribution: {dict(zip(*np.unique(labels_str, return_counts=True)))}")
-
-    # ── Train/val/test split (70/15/15) ──
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        features, label_indices, test_size=0.3, random_state=args.seed, stratify=label_indices
-    )
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.5, random_state=args.seed, stratify=y_temp
-    )
-
-    print(f"\nSplit sizes: train={len(X_train)}, val={len(X_val)}, test={len(X_test)}")
+    idx_to_label = {v: k for k, v in label_map.items()}
+    num_classes = len(label_map)
+    class_names = [idx_to_label[i] for i in range(num_classes)]
 
     # ── Create datasets & dataloaders ──
     train_dataset = LandmarkDataset(X_train, y_train, augment=True)
@@ -325,7 +391,8 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
     # ── Model, optimizer, criterion ──
-    model = GestureMLP(input_dim=features.shape[1], num_classes=num_classes).to(device)
+    input_dim = X_train.shape[1]
+    model = GestureMLP(input_dim=input_dim, num_classes=num_classes).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=5,
@@ -374,7 +441,7 @@ def main():
                 "val_acc": val_acc,
                 "val_loss": val_loss,
                 "num_classes": num_classes,
-                "input_dim": features.shape[1],
+                "input_dim": input_dim,
                 "label_map": label_map,
             }
             torch.save(checkpoint, os.path.join(args.output, "best.pt"))
