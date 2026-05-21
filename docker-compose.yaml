@@ -33,5 +33,28 @@ services:
     volumes:
       - ./server:/app
 
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: sign_ml
+    restart: always
+    ports:
+      - "8001:8001"
+
+  ml-tools:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    profiles:
+      - tools
+    working_dir: /app
+    volumes:
+      - ./ml:/app
+      - ./DataSet:/DataSet
+      - ./DataSet_augmented:/DataSet_augmented
+    entrypoint: ["python"]
+    command: ["--version"]
+
 volumes:
   postgres_data:

@@ -1,0 +1,16 @@
+torch
+torchvision
+mediapipe
+onnxruntime
+onnx
+onnxscript
+scikit-learn
+pandas
+numpy
+matplotlib
+seaborn
+fastapi
+uvicorn[standard]
+python-multipart
+Pillow
+opencv-python-headless

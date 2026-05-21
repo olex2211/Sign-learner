@@ -13,6 +13,9 @@ venv/
 
 uploads/
 media/
+DataSet/
+DataSet_augmented/
+Zenodo_Dataset/
 
 GEMINI.md
 Action Plan.md
@@ -23,3 +26,13 @@ Action Plan.md
 
 *.log
 logs/
+
+# ML artifacts
+ml/models/*.pt
+ml/models/*.onnx
+ml/models/*.tflite
+ml/models/_tf_temp/
+
+# Temp files
+_inspect_dataset.py
+_dataset_info*.json

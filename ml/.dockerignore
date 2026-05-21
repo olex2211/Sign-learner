@@ -1,0 +1,29 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Dataset and extracted landmarks
+data/
+*.csv
+
+# Extraneous models
+*.pt
+*.pth
+training_history.*
+confusion_matrix.png
+_dataset_report.json
+
+# IDEs
+.idea/
+.vscode/
+
+# Ignore Dockerfile
+Dockerfile
+.dockerignore
