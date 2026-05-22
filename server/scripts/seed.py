@@ -17,12 +17,47 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from src.core.config import settings
-from src.models.base import Base
-from src.models.gestures_model import Language, Gesture
+from src.models.gestures_model import GestureComplexity, Language, Gesture
 from src.models.lessons_model import Lesson
 from src.models.achievements_model import Achievement
 
 UKR_LETTERS = list("АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ")
+
+LETTER_COMPLEXITY = {
+    "А": GestureComplexity.EASY,
+    "Б": GestureComplexity.MEDIUM,
+    "В": GestureComplexity.EASY,
+    "Г": GestureComplexity.EASY,
+    "Ґ": GestureComplexity.MEDIUM,
+    "Д": GestureComplexity.EASY,
+    "Е": GestureComplexity.EASY,
+    "Є": GestureComplexity.MEDIUM,
+    "Ж": GestureComplexity.HARD,
+    "З": GestureComplexity.MEDIUM,
+    "И": GestureComplexity.MEDIUM,
+    "І": GestureComplexity.EASY,
+    "Ї": GestureComplexity.HARD,
+    "Й": GestureComplexity.MEDIUM,
+    "К": GestureComplexity.MEDIUM,
+    "Л": GestureComplexity.EASY,
+    "М": GestureComplexity.EASY,
+    "Н": GestureComplexity.EASY,
+    "О": GestureComplexity.EASY,
+    "П": GestureComplexity.EASY,
+    "Р": GestureComplexity.MEDIUM,
+    "С": GestureComplexity.EASY,
+    "Т": GestureComplexity.EASY,
+    "У": GestureComplexity.EASY,
+    "Ф": GestureComplexity.MEDIUM,
+    "Х": GestureComplexity.EASY,
+    "Ц": GestureComplexity.MEDIUM,
+    "Ч": GestureComplexity.MEDIUM,
+    "Ш": GestureComplexity.MEDIUM,
+    "Щ": GestureComplexity.HARD,
+    "Ь": GestureComplexity.MEDIUM,
+    "Ю": GestureComplexity.HARD,
+    "Я": GestureComplexity.MEDIUM,
+}
 
 ACHIEVEMENTS = [
     {"name": "Перший жест", "description": "Завершити перший урок"},
@@ -52,6 +87,7 @@ async def seed():
 
         # Gestures + Lessons
         for i, letter in enumerate(UKR_LETTERS, start=1):
+            complexity = LETTER_COMPLEXITY[letter]
             result = await db.execute(
                 select(Gesture).where(
                     Gesture.language_id == lang.language_id,
@@ -64,13 +100,27 @@ async def seed():
                 gesture = Gesture(
                     language_id=lang.language_id,
                     symbol=letter,
-                    complexity=1,
+                    complexity=complexity,
                 )
                 db.add(gesture)
                 await db.commit()
                 await db.refresh(gesture)
-                print(f"  ✅ Gesture: {letter}")
+                print(f"  ✅ Gesture: {letter} ({complexity.value})")
+            else:
+                if gesture.complexity != complexity:
+                    gesture.complexity = complexity
+                    await db.commit()
+                    await db.refresh(gesture)
+                    print(f"  🔄 Gesture complexity updated: {letter} ({complexity.value})")
+                else:
+                    print(f"  ⏭️  Gesture already exists: {letter} ({complexity.value})")
 
+            lesson_result = await db.execute(
+                select(Lesson).where(Lesson.gesture_id == gesture.gesture_id)
+            )
+            lesson = lesson_result.scalars().first()
+
+            if not lesson:
                 lesson = Lesson(
                     gesture_id=gesture.gesture_id,
                     title=f"Буква {letter}",
@@ -80,8 +130,12 @@ async def seed():
                 db.add(lesson)
                 await db.commit()
                 print(f"  ✅ Lesson: {lesson.title}")
+            elif lesson.order != i:
+                lesson.order = i
+                await db.commit()
+                print(f"  🔄 Lesson order updated: {lesson.title} -> {i}")
             else:
-                print(f"  ⏭️  Gesture already exists: {letter}")
+                print(f"  ⏭️  Lesson already exists: {lesson.title}")
 
         # Achievements
         for ach_data in ACHIEVEMENTS:

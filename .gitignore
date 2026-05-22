@@ -33,6 +33,7 @@ ml/models/*.pt
 ml/models/*.onnx
 ml/models/*.tflite
 ml/models/_tf_temp/
+ml/data/*.csv
 
 # Temp files
 _inspect_dataset.py

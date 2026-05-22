@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.api.routes import auth, users, gestures, lessons, achievements, ml
+from src.api.routes import auth, users, gestures, lessons, achievements, ml, practice
 
 api_router = APIRouter()
 
@@ -9,3 +9,4 @@ api_router.include_router(gestures.router, prefix="/gestures", tags=["Gestures"]
 api_router.include_router(lessons.router, prefix="/lessons", tags=["Lessons"])
 api_router.include_router(achievements.router, prefix="/achievements", tags=["Achievements"])
 api_router.include_router(ml.router, prefix="/ml", tags=["ML"])
+api_router.include_router(practice.router, prefix="/practice", tags=["Practice"])

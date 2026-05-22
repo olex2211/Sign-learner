@@ -8,8 +8,10 @@ from sqlalchemy.orm import selectinload
 from src.db.database import get_db
 from src.models import Lesson, UserLesson, User
 from src.models.lessons_model import LessonStatus
+from src.models.practice_model import GestureProgressStatus, UserGestureProgress
+from src.services.practice_service import XP_COMPLETION_BONUS
 
-XP_PER_LESSON = 50
+XP_PER_LESSON = XP_COMPLETION_BONUS
 
 
 class LessonService:
@@ -93,6 +95,20 @@ class LessonService:
                 detail="Lesson not found.",
             )
 
+        practice_result = await self.db.execute(
+            select(UserGestureProgress).where(
+                UserGestureProgress.user_id == user.user_id,
+                UserGestureProgress.lesson_id == lesson_id,
+                UserGestureProgress.status == GestureProgressStatus.MASTERED,
+            )
+        )
+        practice_progress = practice_result.scalars().first()
+        if not practice_progress:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Lesson can be completed only after the gesture is mastered.",
+            )
+
         ul_result = await self.db.execute(
             select(UserLesson).where(
                 UserLesson.user_id == user.user_id,
@@ -106,7 +122,7 @@ class LessonService:
 
         if ul:
             ul.status = LessonStatus.PASSED
-            ul.xp_earned = XP_PER_LESSON
+            ul.xp_earned += XP_PER_LESSON
         else:
             ul = UserLesson(
                 user_id=user.user_id,

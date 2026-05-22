@@ -9,6 +9,7 @@ from src.models.base import Base
 if TYPE_CHECKING:
     from src.models.gestures_model import Gesture
     from src.models.users_model import User
+    from src.models.practice_model import UserGestureProgress
 
 class MediaType(enum.Enum):
     PHOTO = "photo"
@@ -19,6 +20,7 @@ class LessonStatus(enum.Enum):
     LOCKED = "locked"
     AVAILABLE = "available"
     PASSED = "passed"
+    SKIPPED = "skipped"
 
 
 class Lesson(Base):
@@ -33,6 +35,7 @@ class Lesson(Base):
     gesture: Mapped["Gesture"] = relationship(back_populates="lessons")
     media_items: Mapped[list["Media"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
     user_progress: Mapped[list["UserLesson"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
+    practice_progress: Mapped[list["UserGestureProgress"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
 
 
 class Media(Base):

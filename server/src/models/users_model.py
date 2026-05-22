@@ -8,6 +8,7 @@ from src.models.base import Base
 if TYPE_CHECKING:
     from src.models.achievements_model import UserAchievement
     from src.models.lessons_model import UserLesson
+    from src.models.practice_model import UserGestureProgress
 
 class User(Base):
     __tablename__ = "users"
@@ -24,3 +25,4 @@ class User(Base):
 
     achievements: Mapped[list["UserAchievement"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     lessons_progress: Mapped[list["UserLesson"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    gesture_progress: Mapped[list["UserGestureProgress"]] = relationship(back_populates="user", cascade="all, delete-orphan")

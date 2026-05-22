@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
+from src.models.gestures_model import GestureComplexity
+
 
 class LanguageResponse(BaseModel):
     language_id: int
@@ -13,6 +15,6 @@ class GestureResponse(BaseModel):
     gesture_id: int
     language_id: int
     symbol: str
-    complexity: int
+    complexity: GestureComplexity
 
     model_config = ConfigDict(from_attributes=True)
