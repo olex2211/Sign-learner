@@ -24,6 +24,9 @@ Action Plan.md
 .vscode/
 .idea/
 .DS_Store
+.superpowers/
+
+
 
 *.log
 logs/
