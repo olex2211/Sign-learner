@@ -1,0 +1,10 @@
+-r requirements.inference.txt
+
+torch
+torchvision
+onnx
+onnxscript
+scikit-learn
+pandas
+matplotlib
+seaborn

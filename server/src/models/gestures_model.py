@@ -16,6 +16,12 @@ class GestureComplexity(enum.Enum):
     MEDIUM = "medium"
     HARD = "hard"
 
+
+class GestureMediaRole(enum.Enum):
+    ICON = "icon"
+    DEMO_IMAGE = "demo_image"
+
+
 class Language(Base):
     __tablename__ = "languages"
 
@@ -38,5 +44,17 @@ class Gesture(Base):
     )
 
     language: Mapped["Language"] = relationship(back_populates="gestures")
+    media_items: Mapped[list["GestureMedia"]] = relationship(back_populates="gesture", cascade="all, delete-orphan")
     lessons: Mapped[list["Lesson"]] = relationship(back_populates="gesture", cascade="all, delete-orphan")
     user_progress: Mapped[list["UserGestureProgress"]] = relationship(back_populates="gesture", cascade="all, delete-orphan")
+
+
+class GestureMedia(Base):
+    __tablename__ = "gesture_media"
+
+    gesture_media_id: Mapped[int] = mapped_column(primary_key=True)
+    gesture_id: Mapped[int] = mapped_column(ForeignKey("gestures.gesture_id", ondelete="CASCADE"))
+    media_role: Mapped[GestureMediaRole] = mapped_column(SQLEnum(GestureMediaRole))
+    file_path: Mapped[str] = mapped_column(String)
+
+    gesture: Mapped["Gesture"] = relationship(back_populates="media_items")

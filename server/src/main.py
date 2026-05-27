@@ -14,13 +14,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 media_dir = Path(__file__).resolve().parent.parent / "media"
 media_dir.mkdir(exist_ok=True)

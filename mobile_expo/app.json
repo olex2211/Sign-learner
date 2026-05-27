@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "Daktildo",
+    "slug": "daktildo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app-icon-daktildo.png",
+    "splash": {
+      "image": "./assets/splash-daktildo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "scheme": "daktildo",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Камера потрібна для розпізнавання жестів у реальному часі."
+      }
+    },
+    "android": {
+      "package": "com.daktildo.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/android-icon-foreground-daktildo.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Камера потрібна для розпізнавання жестів УЖМ."
+        }
+      ],
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "26799d24-e8cf-4996-aba5-eeb9a0f83620"
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 from .base import Base
 
 from .users_model import User
-from .gestures_model import Language, Gesture, GestureComplexity
+from .gestures_model import Language, Gesture, GestureComplexity, GestureMedia, GestureMediaRole
 from .lessons_model import Lesson, Media, UserLesson
 from .achievements_model import Achievement, UserAchievement
 from .practice_model import UserGestureProgress, GestureProgressStatus

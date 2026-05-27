@@ -76,7 +76,7 @@ class PracticeService:
             )
 
         success = (
-            data.predicted_gesture == lesson.gesture.symbol
+            data.predicted_gesture.lower() == lesson.gesture.symbol.lower()
             and data.confidence >= CONFIDENCE_THRESHOLD
         )
 

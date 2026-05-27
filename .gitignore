@@ -9,7 +9,13 @@ build/
 venv/
 
 .env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+!*/.env.example
 
 uploads/
 media/
@@ -24,12 +30,20 @@ Action Plan.md
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
+desktop.ini
 .superpowers/
+.claude/
 
 
 
 *.log
 logs/
+
+# Node / Frontend
+node_modules/
+.expo/
+.vite/
 
 # ML artifacts
 ml/models/*.pt
@@ -37,6 +51,10 @@ ml/models/*.onnx
 ml/models/*.tflite
 ml/models/_tf_temp/
 ml/data/*.csv
+!ml/models/gesture_classifier.onnx
+!ml/models/gesture_classifier.onnx.data
+!ml/models/label_map.json
+!ml/models/hand_landmarker.task
 
 # Temp files
 _inspect_dataset.py

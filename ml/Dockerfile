@@ -13,9 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install inference-only Python dependencies.
+# Training dependencies are intentionally kept out of the runtime image.
+COPY requirements.inference.txt .
+RUN pip install --no-cache-dir -r requirements.inference.txt
 
 # Copy inference code and model artifacts
 COPY inference/ ./inference/
